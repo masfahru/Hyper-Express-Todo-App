@@ -27,24 +27,23 @@ const decoder = new StringDecoder('utf8');
 uWS
   .App()
   .ws('/*', {
-    message: (_ws: uWS.WebSocket, message: ArrayBuffer) => {
+    message: async (_ws: uWS.WebSocket, message: ArrayBuffer) => {
       const json: any = JSON.parse(decoder.write(Buffer.from(message)));
       switch (json.type) {
         case 'ACTIVITY.POST': {
-          db('activities').insert(json.data).then();
+          await db('activities').insert(json.data);
           break;
         }
         case 'ACTIVITY.PATCH': {
-          db('activities')
+          await db('activities')
             .where({
               id: json.data.id,
             })
-            .update({ ...json.data.updateData })
-            .then();
+            .update({ ...json.data.updateData });
           break;
         }
         case 'ACTIVITY.DELETE': {
-          db('activities')
+          await db('activities')
             .where({
               id: json.data.id,
             })
@@ -52,25 +51,23 @@ uWS
           break;
         }
         case 'TODO.POST': {
-          db('todos').insert(json.data).then();
+          await db('todos').insert(json.data);
           break;
         }
         case 'TODO.PATCH': {
-          db('todos')
+          await db('todos')
             .where({
               id: json.data.id,
             })
-            .update({ ...json.data.updateData })
-            .then();
+            .update({ ...json.data.updateData });
           break;
         }
         case 'TODO.DELETE': {
-          db('todos')
+          await db('todos')
             .where({
               id: json.data.id,
             })
-            .delete()
-            .then();
+            .delete();
           break;
         }
       }
