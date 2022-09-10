@@ -27,42 +27,23 @@ export class TodoMiddleware {
   }
 
   async getTodo(request: Request, response: Response) {
-    const { activity_group_id = '' } = request.query_parameters;
-    const key = activity_group_id ? `todos-${activity_group_id}` : 'todos';
-    let cached: any[] = this.cache.get(key);
-    if (typeof cached === 'undefined') {
-      const query = this.db
-        .select('id', 'activity_group_id', 'title', 'is_active', 'priority')
-        .from('todos');
-      if (activity_group_id) {
-        query.where({
-          activity_group_id,
-        });
-      }
-      cached = await query.limit(10);
-      this.cache.set(key, cached);
-    }
-    return GetResponse(response, cached);
+    const activity_group_id = request.query.activity_group_id
+      ? Number(request.query.activity_group_id)
+      : 0;
+    const result = this.cache.todoCache.filter((todo: any) => {
+      return todo.activity_group_id === activity_group_id;
+    });
+
+    return GetResponse(response, result);
   }
 
   async getTodoById(request: Request, response: Response) {
-    const { id = '' } = request.path_parameters;
-    const key = `todos-${id}`;
-    let cached: any = this.cache.get(key);
-    if (typeof cached === 'undefined') {
-      cached = await this.db
-        .select('id', 'activity_group_id', 'title', 'is_active', 'priority')
-        .from('todos')
-        .where({
-          id,
-        })
-        .first();
-      if (!cached) {
-        return NotfoundResponse(response, `Todo with ID ${id} Not Found`);
-      }
-      this.cache.set(key, cached);
+    const id = Number(request.params.id);
+    const result = this.cache.todoCacheByKey[id];
+    if (!result) {
+      return NotfoundResponse(response, `Todo with ID ${id} Not Found`);
     }
-    return GetResponse(response, cached);
+    return GetResponse(response, result);
   }
 
   async postTodo(request: Request, response: Response) {
@@ -79,57 +60,64 @@ export class TodoMiddleware {
     }
     this.socket.send(
       JSON.stringify({
-        type: 'TODO',
+        type: 'TODO.POST',
         data: { title, activity_group_id, is_active, priority },
       }),
     );
-    this.id++;
-    const returned = {
-      id: this.id,
+    this.cache.lastTodoId++;
+    const result = {
+      id: this.cache.lastTodoId,
       activity_group_id,
       title,
       is_active,
       priority,
     };
-    this.cache.set(`todos-${this.id}`, returned);
-    this.cache.delete('todos');
-    return CreateResponse(response, returned);
+    this.cache.todoCache.push(result);
+    this.cache.todoCacheByKey[result.id] = result;
+    return CreateResponse(response, result);
   }
 
   async patchTodo(request: Request, response: Response) {
-    const { id = '' } = request.path_parameters;
-    const updateData = await request.json();
-    const sendPatch = await this.db('todos')
-      .where({
-        id,
-      })
-      .update({ ...updateData });
-    if (!sendPatch) {
+    const id = Number(request.params.id);
+    const idx = this.cache.todoCache.findIndex((a) => a.id === id);
+    if (idx < 0) {
       return NotfoundResponse(response, `Todo with ID ${id} Not Found`);
     }
-    const updatedTodo = await this.db('todos')
-      .select('id', 'activity_group_id', 'title', 'is_active', 'priority')
-      .where({
-        id,
-      })
-      .first();
-    this.cache.set(`todos-${id}`, updatedTodo);
-    this.cache.delete('todos');
-    return GetResponse(response, updatedTodo);
+    const updateData = await request.json();
+    this.socket.send(
+      JSON.stringify({
+        type: 'TODO.PATCH',
+        data: {
+          id,
+          updateData,
+        },
+      }),
+    );
+    this.cache.todoCache[idx] = { ...this.cache.todoCache[idx], ...updateData };
+    this.cache.todoCacheByKey[id] = {
+      ...this.cache.todoCacheByKey[id],
+      ...updateData,
+    };
+    return GetResponse(response, this.cache.todoCacheByKey[id]);
   }
 
   async deleteTodo(request: Request, response: Response) {
-    const { id = '' } = request.path_parameters;
-    const result = await this.db('todos')
-      .where({
-        id,
-      })
-      .delete();
-    if (!result) {
+    const id = Number(request.params.id);
+    const todo = this.cache.todoCacheByKey[id];
+    if (!todo) {
       return NotfoundResponse(response, `Todo with ID ${id} Not Found`);
     }
-    this.cache.delete(`todos-${id}`);
-    this.cache.delete('todos');
+    this.socket.send(
+      JSON.stringify({
+        type: 'TODO.DELETE',
+        data: {
+          id,
+        },
+      }),
+    );
+    const idx = this.cache.todoCache.findIndex((a) => a.id === id);
+    this.cache.todoCache.splice(idx, 1);
+    this.cache.todoCacheByKey.splice(id, 1);
     return GetResponse(response, {});
   }
 }

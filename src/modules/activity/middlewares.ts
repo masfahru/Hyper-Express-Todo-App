@@ -27,42 +27,16 @@ export class ActivityMiddleware {
   }
 
   async getActivity(request: Request, response: Response) {
-    const { email = '' } = request.query_parameters;
-    const key = email ? `activities-${email}` : 'activities';
-    let cached: any[] = this.cache.get(key);
-    if (typeof cached === 'undefined') {
-      const query = this.db
-        .select('id', 'title', 'created_at')
-        .from('activities');
-      if (email) {
-        query.where({
-          email,
-        });
-      }
-      cached = await query.limit(10);
-      this.cache.set(key, cached);
-    }
-    return GetResponse(response, cached);
+    return GetResponse(response, this.cache.activityCache);
   }
 
   async getActivityById(request: Request, response: Response) {
-    const { id = '' } = request.path_parameters;
-    const key = `activities-${id}`;
-    let cached: any = this.cache.get(key);
-    if (typeof cached === 'undefined') {
-      cached = await this.db
-        .select('id', 'title', 'email', 'created_at')
-        .from('activities')
-        .where({
-          id,
-        })
-        .first();
-      if (!cached) {
-        return NotfoundResponse(response, `Activity with ID ${id} Not Found`);
-      }
-      this.cache.set(key, cached);
+    const id = Number(request.path_parameters.id);
+    const result = this.cache.activityCacheByKey[id];
+    if (!result) {
+      return NotfoundResponse(response, `Activity with ID ${id} Not Found`);
     }
-    return GetResponse(response, cached);
+    return GetResponse(response, result);
   }
 
   async postActivity(request: Request, response: Response) {
@@ -73,53 +47,66 @@ export class ActivityMiddleware {
       return BadRequestResponse(response, 'title cannot be null');
     }
     this.socket.send(
-      JSON.stringify({ type: 'ACTIVITY', data: { email, title } }),
+      JSON.stringify({
+        type: 'ACTIVITY.POST',
+        data: { email, title },
+      }),
     );
-    this.id++;
-    const returned = {
-      id: this.id,
+    this.cache.lastActivityId++;
+    const result = {
+      id: this.cache.lastActivityId,
       email,
       title,
     };
-    this.cache.set(`activities-${returned.id}`, returned);
-    this.cache.delete('activities');
-    return CreateResponse(response, returned);
+    this.cache.activityCache.push(result);
+    this.cache.activityCacheByKey[result.id] = result;
+    return CreateResponse(response, this.cache.activityCacheByKey[result.id]);
   }
 
   async patchActivity(request: Request, response: Response) {
-    const { id = '' } = request.path_parameters;
-    const updateData = await request.json();
-    const sendPatch = await this.db('activities')
-      .where({
-        id,
-      })
-      .update({ ...updateData });
-    if (!sendPatch) {
+    const id = Number(request.params.id);
+    const idx = this.cache.activityCache.findIndex((a) => a.id === id);
+    if (idx < 0) {
       return NotfoundResponse(response, `Activity with ID ${id} Not Found`);
     }
-    const updatedActivity = await this.db('activities')
-      .select('id', 'email', 'title')
-      .where({
-        id,
-      })
-      .first();
-    this.cache.set(`activities-${id}`, updatedActivity);
-    this.cache.delete('activities');
-    return GetResponse(response, updatedActivity);
+    const updateData = await request.json();
+    this.cache.activityCache[idx] = {
+      ...this.cache.activityCache[idx],
+      ...updateData,
+    };
+    this.cache.activityCacheByKey[id] = {
+      ...this.cache.activityCacheByKey[id],
+      ...updateData,
+    };
+    this.socket.send(
+      JSON.stringify({
+        type: 'ACTIVITY.PATCH',
+        data: {
+          id,
+          updateData,
+        },
+      }),
+    );
+    return GetResponse(response, this.cache.activityCacheByKey[id]);
   }
 
   async deleteActivity(request: Request, response: Response) {
-    const { id = '' } = request.path_parameters;
-    const result = await this.db('activities')
-      .where({
-        id,
-      })
-      .delete();
-    if (!result) {
+    const id = Number(request.params.id);
+    const activity = this.cache.activityCacheByKey[id];
+    if (!activity) {
       return NotfoundResponse(response, `Activity with ID ${id} Not Found`);
     }
-    this.cache.delete(`activities-${id}`);
-    this.cache.delete('activities');
+    this.socket.send(
+      JSON.stringify({
+        type: 'ACTIVITY.DELETE',
+        data: {
+          id,
+        },
+      }),
+    );
+    const idx = this.cache.activityCache.findIndex((a) => a.id === id);
+    this.cache.activityCache.splice(idx, 1);
+    this.cache.activityCacheByKey.splice(id, 1);
     return GetResponse(response, {});
   }
 }

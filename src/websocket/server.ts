@@ -30,22 +30,44 @@ uWS
     message: (_ws: uWS.WebSocket, message: ArrayBuffer) => {
       const json: any = JSON.parse(decoder.write(Buffer.from(message)));
       switch (json.type) {
-        case 'ACTIVITY': {
-          db('activities')
-            .insert(json.data)
-            .then()
-            .catch((err) => {
-              console.error(err);
-            });
+        case 'ACTIVITY.POST': {
+          db('activities').insert(json.data);
           break;
         }
-        case 'TODO': {
+        case 'ACTIVITY.PATCH': {
+          db('activities')
+            .where({
+              id: json.data.id,
+            })
+            .update({ ...json.data.updateData });
+          break;
+        }
+        case 'ACTIVITY.DELETE': {
+          db('activities')
+            .where({
+              id: json.data.id,
+            })
+            .delete();
+          break;
+        }
+        case 'TODO.POST': {
+          db('todos').insert(json.data);
+          break;
+        }
+        case 'TODO.PATCH': {
           db('todos')
-            .insert(json.data)
-            .then()
-            .catch((err) => {
-              console.error(err);
-            });
+            .where({
+              id: json.data.id,
+            })
+            .update({ ...json.data.updateData });
+          break;
+        }
+        case 'TODO.DELETE': {
+          db('todos')
+            .where({
+              id: json.data.id,
+            })
+            .delete();
           break;
         }
       }

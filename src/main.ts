@@ -8,38 +8,12 @@ class Main {
   private app: HyperExpress.Server;
   private db: Knex;
   private cache = {
-    data: new Map(),
-    timers: new Map(),
-    set: function (k: string, v: any, ttl = 5000) {
-      if (this.timers.has(k)) {
-        clearTimeout(this.timers.get(k));
-      }
-      this.timers.set(
-        k,
-        setTimeout(() => this.delete(k), ttl),
-      );
-      this.data.set(k, v);
-    },
-    get: function (k: string) {
-      return this.data.get(k);
-    },
-    has: function (k: string) {
-      return this.data.has(k);
-    },
-    delete: function (k: string) {
-      if (this.timers.has(k)) {
-        clearTimeout(this.timers.get(k));
-      }
-      this.timers.delete(k);
-      return this.data.delete(k);
-    },
-    clear: function () {
-      this.data.clear();
-      for (const v of this.timers.values()) {
-        clearTimeout(v);
-      }
-      this.timers.clear();
-    },
+    activityCache: [],
+    activityCacheByKey: [],
+    lastActivityId: 0,
+    todoCache: [],
+    todoCacheByKey: [],
+    lastTodoId: 0,
   };
   private socket: WebSocket;
 

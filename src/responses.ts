@@ -12,8 +12,7 @@ export const GetResponse = (res: Response, data: any) => {
         message: 'Success',
         data,
       }),
-    )
-    .end();
+    );
 };
 
 export const CreateResponse = (res: Response, data: any) => {
@@ -28,8 +27,7 @@ export const CreateResponse = (res: Response, data: any) => {
         message: 'Success',
         data,
       }),
-    )
-    .end();
+    );
 };
 
 export const NotfoundResponse = (res: Response, message: string) => {
@@ -44,11 +42,10 @@ export const NotfoundResponse = (res: Response, message: string) => {
         message,
         data: null,
       }),
-    )
-    .end();
+    );
 };
 
-export const BadRequestResponse = (res, message) => {
+export const BadRequestResponse = (res: Response, message: string) => {
   return res
     .status(400)
     .header('Connection', 'keep-alive')
@@ -60,6 +57,5 @@ export const BadRequestResponse = (res, message) => {
         message,
         data: null,
       }),
-    )
-    .end();
+    );
 };
