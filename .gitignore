@@ -45,4 +45,3 @@ knexfile.js
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-.yarnrc.yml
