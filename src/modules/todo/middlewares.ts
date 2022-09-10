@@ -28,8 +28,8 @@ export class TodoMiddleware {
 
   async getTodo(request: Request, response: Response) {
     const activity_group_id = request.query.activity_group_id
-      ? Number(request.query.activity_group_id)
-      : 0;
+      ? request.query.activity_group_id
+      : '';
     const result = this.cache.todoCache.filter((todo: any) => {
       return todo.activity_group_id === activity_group_id;
     });

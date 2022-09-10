@@ -31,7 +31,7 @@ uWS
       const json: any = JSON.parse(decoder.write(Buffer.from(message)));
       switch (json.type) {
         case 'ACTIVITY.POST': {
-          db('activities').insert(json.data);
+          db('activities').insert(json.data).then();
           break;
         }
         case 'ACTIVITY.PATCH': {
@@ -39,7 +39,8 @@ uWS
             .where({
               id: json.data.id,
             })
-            .update({ ...json.data.updateData });
+            .update({ ...json.data.updateData })
+            .then();
           break;
         }
         case 'ACTIVITY.DELETE': {
@@ -51,7 +52,7 @@ uWS
           break;
         }
         case 'TODO.POST': {
-          db('todos').insert(json.data);
+          db('todos').insert(json.data).then();
           break;
         }
         case 'TODO.PATCH': {
@@ -59,7 +60,8 @@ uWS
             .where({
               id: json.data.id,
             })
-            .update({ ...json.data.updateData });
+            .update({ ...json.data.updateData })
+            .then();
           break;
         }
         case 'TODO.DELETE': {
@@ -67,7 +69,8 @@ uWS
             .where({
               id: json.data.id,
             })
-            .delete();
+            .delete()
+            .then();
           break;
         }
       }
