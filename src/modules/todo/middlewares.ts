@@ -1,20 +1,24 @@
 import { Request, Response } from 'hyper-express';
 import { Knex } from 'knex';
-import { CacheDB } from '../../interfaces';
+import { Dependencies } from '../../interfaces';
 import {
   BadRequestResponse,
   CreateResponse,
   GetResponse,
   NotfoundResponse,
 } from '../../responses';
+import * as WebSocket from 'ws';
 
 export class TodoMiddleware {
   private db: Knex;
   private cache: any;
+  private socket: WebSocket;
+  private id = 0;
 
-  constructor(cacheDb: CacheDB) {
-    this.db = cacheDb.db;
-    this.cache = cacheDb.cache;
+  constructor(dependencies: Dependencies) {
+    this.db = dependencies.db;
+    this.cache = dependencies.cache;
+    this.socket = dependencies.socket;
     this.getTodo = this.getTodo.bind(this);
     this.getTodoById = this.getTodoById.bind(this);
     this.postTodo = this.postTodo.bind(this);
@@ -73,20 +77,21 @@ export class TodoMiddleware {
     } else if (!title) {
       return BadRequestResponse(response, 'title cannot be null');
     }
-    const [id] = await this.db('todos').insert({
-      activity_group_id,
-      title,
-      is_active,
-      priority,
-    });
+    this.socket.send(
+      JSON.stringify({
+        type: 'TODO',
+        data: { title, activity_group_id, is_active, priority },
+      }),
+    );
+    this.id++;
     const returned = {
-      id,
+      id: this.id,
       activity_group_id,
       title,
       is_active,
       priority,
     };
-    this.cache.set(`todos-${id}`, returned);
+    this.cache.set(`todos-${this.id}`, returned);
     this.cache.delete('todos');
     return CreateResponse(response, returned);
   }

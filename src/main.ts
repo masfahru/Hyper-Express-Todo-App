@@ -1,10 +1,9 @@
-import * as dotenv from 'dotenv';
+import 'dotenv/config';
 import * as HyperExpress from 'hyper-express';
+import * as WebSocket from 'ws';
 import knex, { Knex } from 'knex';
 import { ActivityRouter } from './modules/activity/router';
 import { TodoRouter } from './modules/todo/router';
-
-dotenv.config();
 class Main {
   private app: HyperExpress.Server;
   private db: Knex;
@@ -42,6 +41,7 @@ class Main {
       this.timers.clear();
     },
   };
+  private socket: WebSocket;
 
   constructor() {
     this.app = new HyperExpress.Server();
@@ -65,21 +65,26 @@ class Main {
         createTimeoutMillis: 10000,
       },
     });
+    this.socket = new WebSocket('ws://localhost:9001');
   }
   listen() {
     const activityGroup = new ActivityRouter({
       db: this.db,
       cache: this.cache,
+      socket: this.socket,
     });
     const todoRouter = new TodoRouter({
       db: this.db,
       cache: this.cache,
+      socket: this.socket,
     });
     this.app.use('/activity-groups', activityGroup.routes);
     this.app.use('/todo-items', todoRouter.routes);
     this.app
       .listen(3030)
-      .then()
+      .then(() => {
+        console.log('WebServer listening to port 3030');
+      })
       .catch((err) => {
         console.log(err);
       });

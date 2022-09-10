@@ -1,14 +1,14 @@
 import { Router } from 'hyper-express';
-import { CacheDB } from '../../interfaces';
+import { Dependencies } from '../../interfaces';
 import { TodoMiddleware } from './middlewares';
 
 export class TodoRouter {
   private todoRouter: Router;
   private todoMiddleware: TodoMiddleware;
 
-  constructor(cacheDB: CacheDB) {
+  constructor(dependencies: Dependencies) {
     this.todoRouter = new Router();
-    this.todoMiddleware = new TodoMiddleware(cacheDB);
+    this.todoMiddleware = new TodoMiddleware(dependencies);
   }
 
   get routes() {

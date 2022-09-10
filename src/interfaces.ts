@@ -1,6 +1,7 @@
 import { Knex } from 'knex';
-
-export interface CacheDB {
+import * as WebSocket from 'ws';
+export interface Dependencies {
   db: Knex;
   cache: any;
+  socket: WebSocket;
 }

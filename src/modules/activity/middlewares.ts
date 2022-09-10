@@ -5,16 +5,20 @@ import {
   GetResponse,
   NotfoundResponse,
 } from '../../responses';
-import { CacheDB } from '../../interfaces';
+import { Dependencies } from '../../interfaces';
 import { Knex } from 'knex';
+import * as WebSocket from 'ws';
 
 export class ActivityMiddleware {
   private db: Knex;
   private cache: any;
+  private socket: WebSocket;
+  private id = 0;
 
-  constructor(cacheDb: CacheDB) {
-    this.db = cacheDb.db;
-    this.cache = cacheDb.cache;
+  constructor(dependecies: Dependencies) {
+    this.db = dependecies.db;
+    this.cache = dependecies.cache;
+    this.socket = dependecies.socket;
     this.getActivity = this.getActivity.bind(this);
     this.getActivityById = this.getActivityById.bind(this);
     this.postActivity = this.postActivity.bind(this);
@@ -68,13 +72,16 @@ export class ActivityMiddleware {
     } else if (!title) {
       return BadRequestResponse(response, 'title cannot be null');
     }
-    const [id] = await this.db('activities').insert({ email, title });
+    this.socket.send(
+      JSON.stringify({ type: 'ACTIVITY', data: { email, title } }),
+    );
+    this.id++;
     const returned = {
-      id,
+      id: this.id,
       email,
       title,
     };
-    this.cache.set(`activities-${id}`, returned);
+    this.cache.set(`activities-${returned.id}`, returned);
     this.cache.delete('activities');
     return CreateResponse(response, returned);
   }

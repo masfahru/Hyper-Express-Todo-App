@@ -1,14 +1,14 @@
 import { Router } from 'hyper-express';
-import { CacheDB } from '../../interfaces';
+import { Dependencies } from '../../interfaces';
 import { ActivityMiddleware } from './middlewares';
 
 export class ActivityRouter {
   private activityRouter: Router;
   private activityMiddleware: ActivityMiddleware;
 
-  constructor(cacheDb: CacheDB) {
+  constructor(dependencies: Dependencies) {
     this.activityRouter = new Router();
-    this.activityMiddleware = new ActivityMiddleware(cacheDb);
+    this.activityMiddleware = new ActivityMiddleware(dependencies);
   }
 
   get routes() {
