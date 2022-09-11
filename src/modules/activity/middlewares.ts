@@ -13,7 +13,6 @@ export class ActivityMiddleware {
   private db: Knex;
   private cache: any;
   private socket: WebSocket;
-  private id = 0;
 
   constructor(dependecies: Dependencies) {
     this.db = dependecies.db;
@@ -46,12 +45,13 @@ export class ActivityMiddleware {
     } else if (!title) {
       return BadRequestResponse(response, 'title cannot be null');
     }
-    this.socket.send(
-      JSON.stringify({
-        type: 'ACTIVITY.POST',
-        data: { email, title },
-      }),
-    );
+    // this.socket.send(
+    //   JSON.stringify({
+    //     type: 'ACTIVITY.POST',
+    //     data: { email, title },
+    //   }),
+    // );
+    await this.db('activities').insert({ email, title });
     this.cache.lastActivityId++;
     const result = {
       id: this.cache.lastActivityId,
@@ -78,15 +78,20 @@ export class ActivityMiddleware {
       ...this.cache.activityCacheByKey[id],
       ...updateData,
     };
-    this.socket.send(
-      JSON.stringify({
-        type: 'ACTIVITY.PATCH',
-        data: {
-          id,
-          updateData,
-        },
-      }),
-    );
+    // this.socket.send(
+    //   JSON.stringify({
+    //     type: 'ACTIVITY.PATCH',
+    //     data: {
+    //       id,
+    //       updateData,
+    //     },
+    //   }),
+    // );
+    await this.db('activities')
+      .where({
+        id: id,
+      })
+      .update({ ...updateData });
     return GetResponse(response, this.cache.activityCacheByKey[id]);
   }
 
@@ -96,14 +101,19 @@ export class ActivityMiddleware {
     if (!activity) {
       return NotfoundResponse(response, `Activity with ID ${id} Not Found`);
     }
-    this.socket.send(
-      JSON.stringify({
-        type: 'ACTIVITY.DELETE',
-        data: {
-          id,
-        },
-      }),
-    );
+    // this.socket.send(
+    //   JSON.stringify({
+    //     type: 'ACTIVITY.DELETE',
+    //     data: {
+    //       id,
+    //     },
+    //   }),
+    // );
+    await this.db('activities')
+      .where({
+        id,
+      })
+      .delete();
     const idx = this.cache.activityCache.findIndex((a) => a.id === id);
     this.cache.activityCache.splice(idx, 1);
     this.cache.activityCacheByKey.splice(id, 1);

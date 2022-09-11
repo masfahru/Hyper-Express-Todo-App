@@ -39,7 +39,7 @@ class Main {
         createTimeoutMillis: 10000,
       },
     });
-    this.socket = new WebSocket('ws://localhost:9001');
+    // this.socket = new WebSocket('ws://127.0.0.1:9001');
   }
   listen() {
     const activityGroup = new ActivityRouter({

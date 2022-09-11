@@ -13,7 +13,6 @@ export class TodoMiddleware {
   private db: Knex;
   private cache: any;
   private socket: WebSocket;
-  private id = 0;
 
   constructor(dependencies: Dependencies) {
     this.db = dependencies.db;
@@ -58,12 +57,18 @@ export class TodoMiddleware {
     } else if (!title) {
       return BadRequestResponse(response, 'title cannot be null');
     }
-    this.socket.send(
-      JSON.stringify({
-        type: 'TODO.POST',
-        data: { title, activity_group_id, is_active, priority },
-      }),
-    );
+    // this.socket.send(
+    //   JSON.stringify({
+    //     type: 'TODO.POST',
+    //     data: { title, activity_group_id, is_active, priority },
+    //   }),
+    // );
+    await this.db('todos').insert({
+      title,
+      activity_group_id,
+      is_active,
+      priority,
+    });
     this.cache.lastTodoId++;
     const result = {
       id: this.cache.lastTodoId,
@@ -84,15 +89,20 @@ export class TodoMiddleware {
       return NotfoundResponse(response, `Todo with ID ${id} Not Found`);
     }
     const updateData = await request.json();
-    this.socket.send(
-      JSON.stringify({
-        type: 'TODO.PATCH',
-        data: {
-          id,
-          updateData,
-        },
-      }),
-    );
+    // this.socket.send(
+    //   JSON.stringify({
+    //     type: 'TODO.PATCH',
+    //     data: {
+    //       id,
+    //       updateData,
+    //     },
+    //   }),
+    // );
+    await this.db('todos')
+      .where({
+        id,
+      })
+      .update({ ...updateData });
     this.cache.todoCache[idx] = { ...this.cache.todoCache[idx], ...updateData };
     this.cache.todoCacheByKey[id] = {
       ...this.cache.todoCacheByKey[id],
@@ -107,14 +117,19 @@ export class TodoMiddleware {
     if (!todo) {
       return NotfoundResponse(response, `Todo with ID ${id} Not Found`);
     }
-    this.socket.send(
-      JSON.stringify({
-        type: 'TODO.DELETE',
-        data: {
-          id,
-        },
-      }),
-    );
+    // this.socket.send(
+    //   JSON.stringify({
+    //     type: 'TODO.DELETE',
+    //     data: {
+    //       id,
+    //     },
+    //   }),
+    // );
+    await this.db('todos')
+      .where({
+        id,
+      })
+      .delete();
     const idx = this.cache.todoCache.findIndex((a) => a.id === id);
     this.cache.todoCache.splice(idx, 1);
     this.cache.todoCacheByKey.splice(id, 1);

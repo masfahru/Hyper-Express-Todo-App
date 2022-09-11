@@ -28,7 +28,7 @@ uWS
   .App()
   .ws('/*', {
     message: async (_ws: uWS.WebSocket, message: ArrayBuffer) => {
-      const json: any = JSON.parse(decoder.write(Buffer.from(message)));
+      const json = JSON.parse(decoder.write(Buffer.from(message)));
       switch (json.type) {
         case 'ACTIVITY.POST': {
           await db('activities').insert(json.data);
