@@ -13,7 +13,7 @@ const db = knex({
   },
   pool: {
     min: 0,
-    max: 150,
+    max: 40,
     destroyTimeoutMillis: 100,
     idleTimeoutMillis: 100,
     reapIntervalMillis: 100,
