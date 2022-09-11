@@ -14,7 +14,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "postbuild": "rimraf node_modules && yarn install --production",
-    "build": "yarn && rimraf dist && cross-env NODE_ENV=production tsc --diagnostics && yarn postbuild",
+    "build": "yarn && rimraf dist && cross-env NODE_ENV=production tsc --diagnostics",
     "dev": "nodemon src/main.ts",
     "dev:websocket": "nodemon src/websocket/server.ts",
     "migrate:make": "knex migrate:make",
