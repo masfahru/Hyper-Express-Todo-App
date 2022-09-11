@@ -63,12 +63,14 @@ export class TodoMiddleware {
     //     data: { title, activity_group_id, is_active, priority },
     //   }),
     // );
-    await this.db('todos').insert({
-      title,
-      activity_group_id,
-      is_active,
-      priority,
-    });
+    this.db('todos')
+      .insert({
+        title,
+        activity_group_id,
+        is_active,
+        priority,
+      })
+      .then();
     this.cache.lastTodoId++;
     const result = {
       id: this.cache.lastTodoId,
@@ -98,11 +100,12 @@ export class TodoMiddleware {
     //     },
     //   }),
     // );
-    await this.db('todos')
+    this.db('todos')
       .where({
         id,
       })
-      .update({ ...updateData });
+      .update({ ...updateData })
+      .then();
     this.cache.todoCache[idx] = { ...this.cache.todoCache[idx], ...updateData };
     this.cache.todoCacheByKey[id] = {
       ...this.cache.todoCacheByKey[id],
@@ -125,11 +128,12 @@ export class TodoMiddleware {
     //     },
     //   }),
     // );
-    await this.db('todos')
+    this.db('todos')
       .where({
         id,
       })
-      .delete();
+      .delete()
+      .then();
     const idx = this.cache.todoCache.findIndex((a) => a.id === id);
     this.cache.todoCache.splice(idx, 1);
     this.cache.todoCacheByKey.splice(id, 1);

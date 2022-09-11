@@ -51,7 +51,7 @@ export class ActivityMiddleware {
     //     data: { email, title },
     //   }),
     // );
-    await this.db('activities').insert({ email, title });
+    this.db('activities').insert({ email, title }).then();
     this.cache.lastActivityId++;
     const result = {
       id: this.cache.lastActivityId,
@@ -87,11 +87,12 @@ export class ActivityMiddleware {
     //     },
     //   }),
     // );
-    await this.db('activities')
+    this.db('activities')
       .where({
         id: id,
       })
-      .update({ ...updateData });
+      .update({ ...updateData })
+      .then();
     return GetResponse(response, this.cache.activityCacheByKey[id]);
   }
 
@@ -109,11 +110,12 @@ export class ActivityMiddleware {
     //     },
     //   }),
     // );
-    await this.db('activities')
+    this.db('activities')
       .where({
         id,
       })
-      .delete();
+      .delete()
+      .then();
     const idx = this.cache.activityCache.findIndex((a) => a.id === id);
     this.cache.activityCache.splice(idx, 1);
     this.cache.activityCacheByKey.splice(id, 1);
