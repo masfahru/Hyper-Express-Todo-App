@@ -57,7 +57,7 @@ class Main {
     this.app
       .listen(3030)
       .then(() => {
-        console.log('WebServer listening to port 3030');
+        console.log(`Process ID ${process.pid} - WebServer listening to port 3030`);
       })
       .catch((err) => {
         console.log(err);

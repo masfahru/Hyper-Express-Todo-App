@@ -27,6 +27,9 @@ const decoder = new StringDecoder('utf8');
 uWS
   .App()
   .ws('/*', {
+    open: () => {
+      console.log('A WebSocket connected!');
+    },
     message: async (_ws: uWS.WebSocket, message: ArrayBuffer) => {
       const json: any = JSON.parse(decoder.write(Buffer.from(message)));
       switch (json.type) {
@@ -72,9 +75,12 @@ uWS
         }
       }
     },
+    close: () => {
+      console.log('WebSocket closed!');
+    }
   })
   .listen(9001, (listenSocket) => {
     if (listenSocket) {
-      console.log('WebSocket listening to port 9001');
+      console.log(`Process ID ${process.pid} - WebSocket listening to port 9001`);
     }
   });
