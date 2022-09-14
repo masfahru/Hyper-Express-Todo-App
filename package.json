@@ -20,7 +20,7 @@
     "migrate:make": "knex migrate:make",
     "migrate": "knex migrate:latest",
     "prestart": "knex migrate:latest",
-    "start": "concurrently \"node dist/websocket/server.js\" \"node dist/main.js\""
+    "start": "node index.js"
   },
   "dependencies": {
     "concurrently": "^7.4.0",

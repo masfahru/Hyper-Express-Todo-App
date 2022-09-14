@@ -30,47 +30,47 @@ uWS
     open: () => {
       console.log('A WebSocket connected!');
     },
-    message: async (_ws: uWS.WebSocket, message: ArrayBuffer) => {
+    message: (_ws: uWS.WebSocket, message: ArrayBuffer) => {
       const json: any = JSON.parse(decoder.write(Buffer.from(message)));
       switch (json.type) {
         case 'ACTIVITY.POST': {
-          await db('activities').insert(json.data);
+          db('activities').insert(json.data).then();
           break;
         }
         case 'ACTIVITY.PATCH': {
-          await db('activities')
+          db('activities')
             .where({
               id: json.data.id,
             })
-            .update({ ...json.data.updateData });
+            .update({ ...json.data.updateData }).then();
           break;
         }
         case 'ACTIVITY.DELETE': {
-          await db('activities')
+          db('activities')
             .where({
               id: json.data.id,
             })
-            .delete();
+            .delete().then();
           break;
         }
         case 'TODO.POST': {
-          await db('todos').insert(json.data);
+          db('todos').insert(json.data).then();
           break;
         }
         case 'TODO.PATCH': {
-          await db('todos')
+          db('todos')
             .where({
               id: json.data.id,
             })
-            .update({ ...json.data.updateData });
+            .update({ ...json.data.updateData }).then();
           break;
         }
         case 'TODO.DELETE': {
-          await db('todos')
+          db('todos')
             .where({
               id: json.data.id,
             })
-            .delete();
+            .delete().then();
           break;
         }
       }
